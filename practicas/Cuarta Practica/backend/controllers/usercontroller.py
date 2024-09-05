@@ -1,6 +1,3 @@
-import os
-from xml.etree import ElementTree as ET
-
 from controllers.estructuras import users
 from flask import Blueprint, jsonify, request
 from models.user import User
@@ -8,107 +5,65 @@ from models.user import User
 BlueprintUser = Blueprint('user', __name__)
 user_logueado = ''
 
-#METODOS DE USUARIOS -------------------------------------------
-@BlueprintUser.route('/usuarios/carga', methods=['POST']) 
-def cargarUsuarios():
-    try:
-        #OBTENEMOS EL XML
-        xml_entrada = request.data.decode('utf-8')
-        if xml_entrada == '':
-            return jsonify({
-                'message': 'Error al cargar los usuarios: EL XML está vacio',
-                'status': 404
-            }), 404
-        #LEER EL XML
-        root = ET.fromstring(xml_entrada)
-        for user in root:
-            id = user.attrib['id']
-            password = user.attrib['password']
-            nombre = ''
-            edad = ''
-            email = ''
-            telefono = ''
-            for elemento in user:
-                if elemento.tag == 'nombre':
-                    nombre = elemento.text
-                if elemento.tag == 'edad':
-                    edad = elemento.text
-                if elemento.tag == 'email':
-                    email = elemento.text
-                if elemento.tag == 'telefono':
-                    telefono = elemento.text
-            nuevo = User(id, password, nombre, edad, email, telefono)
-            users.append(nuevo)
-            #AGREGAMOS EL USUARIO AL XML QUE YA EXISTE
-            if os.path.exists('database/usuarios.xml'):
-                tree2 = ET.parse('database/usuarios.xml')
-                root2 = tree2.getroot()
-                nuevo_usuario = ET.Element('usuario', id=nuevo.id, password=nuevo.password)
-                nombre = ET.SubElement(nuevo_usuario, 'nombre')
-                nombre.text = nuevo.nombre
-                edad = ET.SubElement(nuevo_usuario, 'edad')
-                edad.text = nuevo.edad
-                email = ET.SubElement(nuevo_usuario, 'email')
-                email.text = nuevo.email
-                telefono = ET.SubElement(nuevo_usuario, 'telefono')
-                telefono.text = nuevo.telefono
-                root2.append(nuevo_usuario)
-                ET.indent(root2, space='\t', level=0)
-                tree2.write('database/usuarios.xml', encoding='utf-8', xml_declaration=True)
-        
-        #SI EN DADO CASO NO EXISTE EL XML, LO CREAMOS
-        if not os.path.exists('database/usuarios.xml'):
-            with open('database/usuarios.xml', 'w', encoding='utf-8') as file:
-                file.write(xml_entrada)
-                file.close()
-            
-        return jsonify({
-            'message': 'Usuarios cargados correctamente',
-            'status': 200
-        }), 200
-    except:
-        return jsonify({
-            'message': 'Error al cargar los usuarios',
-            'status': 404
-        }), 404
+#METODOS DE REGISTRO -------------------------------------------
+#Metodo para registrar un usuario a la lista de usuarios
 
-@BlueprintUser.route('/usuarios/verUsuarios', methods=['GET'])
-def obtenerUsuarios():
-    users = precargarUsuarios()
-    diccionario_salida = {
-        'mensaje':'Usuarios encontrados',
-        'usuarios':[],
+@BlueprintUser.route('/usuarios/registrar', methods=['POST'])
+def registrarUsuario():
+    global users
+    id = request.json['id']
+    registroA = request.json['registroA']
+    nombre = request.json['nombre']
+    apellido = request.json['apellido']
+    password = request.json['password']
+    email = request.json['email']
+    telefono = request.json['telefono']
+    nuevo = User(id, registroA, nombre, apellido, password, email, telefono)
+    users.append(nuevo)
+    return jsonify({
+        'message':'Usuario registrado correctamente',
         'status':200
-    }
-    for usuario in users:
-        diccionario_salida['usuarios'].append({
-            'id':usuario.id,
-            'nombre':usuario.nombre,
-            'edad':usuario.edad,
-            'email':usuario.email,
-            'telefono':usuario.telefono,
-            'password':usuario.password
-        })
-    return jsonify(diccionario_salida),200
-
-@BlueprintUser.route('/usuarios/verXML', methods=['GET'])
-def verXMLUsuarios():
-    try:
-        xml_salida = ''
-        with open('database/usuarios.xml', 'r', encoding='utf-8') as file:
-            xml_salida = file.read()
-            file.close()
-        return jsonify({
-            'message':'XML de usuarios encontrado',
-            'xml_salida':xml_salida,
-            'status':200
-        }), 200
-    except:
-        return jsonify({
-            'message': 'Error al cargar los usuarios',
-            'status': 404
-        }), 404
+    }), 200
     
+#Metodo para obtener todos los usuarios
+@BlueprintUser.route('/usuarios/obtener', methods=['GET'])
+def obtenerUsuarios():
+    global users
+    lista = []
+    for user in users:
+        lista.append({
+            'id':user.id,
+            'registroA':user.registroA,
+            'nombre':user.nombre,
+            'apellido':user.apellido,
+            'password':user.password,
+            'email':user.email,
+            'telefono':user.telefono
+        })
+    return jsonify({
+        'usuarios':lista,
+        'status':200
+    }), 200
+
+#Metodo para actualizar la contraseña de un usuario por medio de su registroA o email
+@BlueprintUser.route('/usuarios/actualizarPassword', methods=['PUT'])
+def actualizarPassword():
+    global users
+    registroA = request.json['registroA']
+    email = request.json['email']
+    password = request.json['password']
+    for user in users:
+        if user.registroA == registroA or user.email == email:
+            user.password = password
+            return jsonify({
+                'message':'Contraseña actualizada correctamente',
+                'status':200
+            }), 200
+    return jsonify({
+        'message':'Usuario no encontrado',
+        'status':404
+    }), 404
+
 
 #METODOS DE LOGIN -------------------------------------------
 @BlueprintUser.route('/usuarios/login', methods=['POST'])
@@ -145,36 +100,3 @@ def obtenerLogueado():
         'usuario':user_logueado,
         'status':200
     }), 200
-
-#METODO DE PRECARGAR USUARIOS
-def precargarUsuarios():
-    usuarios = []
-    if os.path.exists('database/usuarios.xml'):
-        tree = ET.parse('database/usuarios.xml')
-        root = tree.getroot()
-        for usuario in root:
-            id = usuario.attrib['id']
-            password = usuario.attrib['password']
-            nombre = ''
-            edad = ''
-            email = ''
-            telefono = ''
-            for elemento in usuario:
-                if elemento.tag == 'nombre':
-                    nombre = elemento.text
-                if elemento.tag == 'edad':
-                    edad = elemento.text
-                if elemento.tag == 'email':
-                    email = elemento.text
-                if elemento.tag == 'telefono':
-                    telefono = elemento.text
-            nuevo = User(id, password, nombre, edad, email, telefono)
-            usuarios.append(nuevo)
-    return usuarios
-
-def getUsuario(id):
-    users = precargarUsuarios()
-    for user in users:
-        if user.id == id:
-            return user
-    return None
