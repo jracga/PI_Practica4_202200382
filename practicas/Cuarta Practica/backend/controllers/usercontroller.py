@@ -17,8 +17,7 @@ def registrarUsuario():
     apellido = request.json['apellido']
     password = request.json['password']
     email = request.json['email']
-    telefono = request.json['telefono']
-    nuevo = User(id, registroA, nombre, apellido, password, email, telefono)
+    nuevo = User(id, registroA, nombre, apellido, password, email)
     users.append(nuevo)
     return jsonify({
         'message':'Usuario registrado correctamente',
@@ -37,8 +36,7 @@ def obtenerUsuarios():
             'nombre':user.nombre,
             'apellido':user.apellido,
             'password':user.password,
-            'email':user.email,
-            'telefono':user.telefono
+            'email':user.email
         })
     return jsonify({
         'usuarios':lista,
@@ -65,38 +63,27 @@ def actualizarPassword():
     }), 404
 
 
-#METODOS DE LOGIN -------------------------------------------
+#Metodo para loguear un usuario que ya se encuentra registrado por medio de su registroA o email 
 @BlueprintUser.route('/usuarios/login', methods=['POST'])
-def Login():
+def login():
+    global users
     global user_logueado
-    users = precargarUsuarios()
-    id = request.json['id']
+    registroA = request.json['registroA']
+    email = request.json['email']
     password = request.json['password']
-    if id == 'AdminIPC2' and password == 'IPC2VJ2024':
-        user_logueado = id
-        return jsonify({
-            'message': 'Usuario logueado correctamente',
-            'role': 0,
-            'status': 200
-        })
     for user in users:
-        if user.id == id and user.password == password:
-            user_logueado = id
+        if user.registroA == registroA or user.email == email:
+            if user.password == password:
+                user_logueado = user
+                return jsonify({
+                    'message':'Usuario logueado correctamente',
+                    'status':200
+                }), 200
             return jsonify({
-                'message':'Usuario logueado correctamente',
-                'role':1,
-                'status':200
-            }), 200
+                'message':'Contraseña incorrecta',
+                'status':400
+            }), 400
     return jsonify({
         'message':'Usuario no encontrado',
-        'role':0,
         'status':404
     }), 404
-
-@BlueprintUser.route('/usuarios/obtenerLogueado', methods=['GET'])
-def obtenerLogueado():
-    global user_logueado
-    return jsonify({
-        'usuario':user_logueado,
-        'status':200
-    }), 200
