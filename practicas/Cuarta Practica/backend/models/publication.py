@@ -11,7 +11,8 @@ class Publication(db.Model):
     creation_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('publications', lazy=True))
-    comments = db.relationship('Comment', backref='publication', lazy=True)
+    comments = db.relationship('Comment', backref='comment_list', lazy=True)
+
 
 class Comment(db.Model):
     __tablename__ = 'comment'
@@ -23,4 +24,5 @@ class Comment(db.Model):
     creation_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('comments', lazy=True))
-    publication = db.relationship('Publication', backref=db.backref('comments', lazy=True))
+    publication = db.relationship('Publication', backref='publication_comments', lazy=True)
+

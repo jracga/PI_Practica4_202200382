@@ -11,8 +11,8 @@ db.init_app(app)
 cors = CORS(app)
 
 # Register blueprints
-app.register_blueprint(BlueprintUser)
-app.register_blueprint(BlueprintPublication)
+app.register_blueprint(BlueprintUser, url_prefix='/usuarios')
+#app.register_blueprint(BlueprintPublication)
 
 if __name__ == '__main__':
     app.run(host='localhost', port=4000, debug=True)

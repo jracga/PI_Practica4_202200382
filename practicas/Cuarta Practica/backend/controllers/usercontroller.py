@@ -4,7 +4,7 @@ from models.user import User
 
 BlueprintUser = Blueprint('user', __name__)
 
-@BlueprintUser.route('/usuarios/registrar', methods=['POST'])
+@BlueprintUser.route('/registrar', methods=['POST'])
 def registrarUsuario():
     data = request.json
     nuevo = User(
@@ -21,7 +21,7 @@ def registrarUsuario():
         'status': 200
     }), 200
 
-@BlueprintUser.route('/usuarios/obtener', methods=['GET'])
+@BlueprintUser.route('/obtener', methods=['GET'])
 def obtenerUsuarios():
     users = User.query.all()
     lista = []
@@ -39,7 +39,7 @@ def obtenerUsuarios():
         'status': 200
     }), 200
 
-@BlueprintUser.route('/usuarios/actualizarPassword', methods=['PUT'])
+@BlueprintUser.route('/actualizarPassword', methods=['PUT'])
 def actualizarPassword():
     data = request.json
     user = User.query.filter((User.registroA == data['registroA']) | (User.email == data['email'])).first()
@@ -55,7 +55,7 @@ def actualizarPassword():
         'status': 404
     }), 404
 
-@BlueprintUser.route('/usuarios/login', methods=['POST'])
+@BlueprintUser.route('/login', methods=['POST'])
 def login():
     data = request.json
     user = User.query.filter((User.registroA == data['registroA']) | (User.email == data['email'])).first()
